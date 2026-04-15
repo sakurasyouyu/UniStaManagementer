@@ -195,6 +195,10 @@ button {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
 }
@@ -226,20 +230,66 @@ button {
   
   .sidebar {
     width: 100%;
-    height: auto;
-    position: relative;
-    padding: 16px;
+    height: 70px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0 16px;
     border-right: none;
-    border-bottom: 1px solid var(--glass-border);
+    border-top: 1px solid var(--glass-border);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 999;
+  }
+  
+  .sidebar-logo {
+    display: none;
   }
   
   .sidebar-nav {
     flex-direction: row;
     overflow-x: auto;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .nav-item {
+    flex-direction: column;
+    padding: 8px 4px;
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  /* ログアウトボタンなどがある下部コンテナをインラインからCSSオーバーライド */
+  .sidebar-footer {
+    display: none;
   }
   
   .main-content {
     margin-left: 0;
-    padding: 24px 16px;
+    padding: 16px;
+    padding-bottom: 90px;
+  }
+
+  .glass-card {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  /* Dashboard Grid */
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Modal Layout */
+  .modal-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
+

@@ -2,45 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { getTasks, saveTask, deleteTask, getTimetable } from '../utils/storage';
 import { Plus, Trash2, Calendar as CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '../context/AuthContext';
 
 const Tasks = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', subject: '', dueDate: '', completed: false });
 
   useEffect(() => {
-    setTasks(getTasks());
-    setTimetable(getTimetable());
-  }, []);
+    if (!user) return;
+    const load = async () => {
+      setTasks(await getTasks(user.id));
+      const tt = await getTimetable(user.id, 2, 'first');
+      setTimetable(tt);
+    };
+    load();
+  }, [user]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!newTask.title || !newTask.dueDate) return;
-    saveTask(newTask);
-    setTasks(getTasks());
+    await saveTask(user.id, newTask);
+    setTasks(await getTasks(user.id));
     setIsModalOpen(false);
     setNewTask({ title: '', subject: '', dueDate: '', completed: false });
   };
 
-  const handleDelete = (id) => {
-    deleteTask(id);
-    setTasks(getTasks());
+  const handleDelete = async (id) => {
+    await deleteTask(user.id, id);
+    setTasks(await getTasks(user.id));
   };
 
-  const toggleComplete = (task) => {
-    saveTask({ ...task, completed: !task.completed });
-    setTasks(getTasks());
+  const toggleComplete = async (task) => {
+    await saveTask(user.id, { ...task, completed: !task.completed });
+    setTasks(await getTasks(user.id));
   };
 
   return (
     <div className="animate-fade-in">
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 className="page-title">Tasks & Assignments</h1>
           <p className="page-subtitle">課題と提出期限の管理</p>
         </div>
-        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={() => setIsModalOpen(true)}>
+        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }} onClick={() => setIsModalOpen(true)}>
           <Plus size={20} />
           新規課題
         </button>
@@ -54,33 +61,33 @@ const Tasks = () => {
           </div>
         ) : (
           tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).map(task => (
-            <div key={task.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '24px', opacity: task.completed ? 0.6 : 1, transition: 'all 0.3s' }}>
+            <div key={task.id} className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: task.completed ? 0.6 : 1, transition: 'all 0.3s' }}>
               
               <button 
                 onClick={() => toggleComplete(task)}
                 style={{ 
-                  width: '32px', height: '32px', borderRadius: '50%', 
+                  width: '36px', height: '36px', borderRadius: '50%', flexShrink: 0,
                   border: `2px solid ${task.completed ? 'var(--success)' : 'var(--text-secondary)'}`,
                   background: task.completed ? 'var(--success)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', flexShrink: 0
+                  color: 'white',
                 }}
               >
                 {task.completed && <CheckCircle size={20} />}
               </button>
 
-              <div style={{ flex: 1, textDecoration: task.completed ? 'line-through' : 'none' }}>
-                <h3 style={{ fontSize: '18px', marginBottom: '4px' }}>{task.title}</h3>
-                <div style={{ display: 'flex', gap: '16px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+              <div style={{ flex: 1, textDecoration: task.completed ? 'line-through' : 'none', minWidth: 0 }}>
+                <h3 style={{ fontSize: '16px', marginBottom: '4px', wordBreak: 'break-word' }}>{task.title}</h3>
+                <div style={{ display: 'flex', gap: '12px', color: 'var(--text-secondary)', fontSize: '13px', flexWrap: 'wrap' }}>
                   <span>科目: {task.subject || 'その他'}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: new Date(task.dueDate) < new Date() && !task.completed ? 'var(--danger)' : 'inherit' }}>
-                    <CalendarIcon size={14} /> 
+                    <CalendarIcon size={13} /> 
                     {format(new Date(task.dueDate), 'yyyy/MM/dd HH:mm')}
                   </span>
                 </div>
               </div>
 
-              <button className="btn-icon" onClick={() => handleDelete(task.id)} style={{ color: 'var(--danger)' }}>
+              <button className="btn-icon" onClick={() => handleDelete(task.id)} style={{ color: 'var(--danger)', flexShrink: 0 }}>
                 <Trash2 size={20} />
               </button>
             </div>

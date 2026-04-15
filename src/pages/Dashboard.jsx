@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Clock, MapPin, BookOpen, User, CheckCircle, AlertCircle } from 'lucide-react';
-import { getTimetable, getTasks } from '../utils/storage';
+import { Clock, MapPin, BookOpen, User, CheckCircle, AlertCircle, X, Plus, Minus, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { getTimetable, getTasks, getAttendance, updateAttendance, getMemos, saveMemo, saveTask } from '../utils/storage';
+import { getClassIteration } from '../utils/academicCalendar';
+import { useAuth } from '../context/AuthContext';
 
 const periodTimes = {
   1: { label: '1・2時限', time: '08:40 - 10:10' },
@@ -12,60 +14,142 @@ const periodTimes = {
 };
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [todayClasses, setTodayClasses] = useState([]);
   const [upcomingTasks, setUpcomingTasks] = useState([]);
   
-  useEffect(() => {
-    const timetable = getTimetable();
-    const tasks = getTasks();
-    
-    // JS dates: 0: Sun, 1: Mon, ... 6: Sat
-    // Our timetable day: 0: Mon, ... 4: Fri
-    const jsDay = new Date().getDay();
-    let currentDayIndex = jsDay - 1;
-    // If weekend, show monday's classes as preview
-    if (currentDayIndex < 0 || currentDayIndex > 4) {
-      currentDayIndex = 0; 
-    }
-    
-    const todays = timetable.filter(c => c.day === currentDayIndex).sort((a, b) => a.period - b.period);
-    setTodayClasses(todays);
-    
+  // Dashboard Interactions State
+  const [attendanceData, setAttendanceData] = useState({});
+  const [memos, setMemos] = useState({});
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedClass, setSelectedClass] = useState(null);
+  
+  // Modal Edit State
+  const [editMemo, setEditMemo] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDueDate, setNewTaskDueDate] = useState('');
+  
+  const loadData = async () => {
+    if (!user) return;
+    const tasks = await getTasks(user.id);
     const pending = tasks.filter(t => !t.completed)
       .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
       .slice(0, 5);
-      
     setUpcomingTasks(pending);
-  }, []);
+    setAttendanceData(await getAttendance(user.id));
+    setMemos(await getMemos(user.id));
+  };
 
-  const todayStr = format(new Date(), 'yyyy年MM月dd日');
-  const dayNames = ['月', '火', '水', '木', '金', '土', '日'];
-  const dayOfWeek = dayNames[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  useEffect(() => {
+    if (!user) return;
+    const init = async () => {
+      const today = new Date();
+      const iter = getClassIteration(today);
+      const currentSemester = (iter && iter.semester === '後期') ? 'second' : 'first';
+      const timetable = await getTimetable(user.id, 2, currentSemester);
+      
+      const jsDay = today.getDay();
+      let currentDayIndex = jsDay - 1;
+      if (currentDayIndex < 0 || currentDayIndex > 4) currentDayIndex = 0;
+      
+      const todays = timetable.filter(c => c.day === currentDayIndex).sort((a, b) => a.period - b.period);
+      setTodayClasses(todays);
+      await loadData();
+    };
+    init();
+  }, [user]);
+
+  const todayDate = new Date();
+  const todayStr = format(todayDate, 'yyyy年MM月dd日');
+  const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+  const dayOfWeek = dayNames[todayDate.getDay()];
+  
+  const iterationInfo = getClassIteration(todayDate);
+
+  const openClassModal = (cls) => {
+    setSelectedClass(cls);
+    setEditMemo(memos[cls.id] || '');
+    setNewTaskTitle('');
+    setNewTaskDueDate('');
+    setModalOpen(true);
+  };
+
+  const handleAttendance = async (classId, type, amount) => {
+    await updateAttendance(user.id, classId, type, amount);
+    await loadData();
+  };
+
+  const handleSaveMemo = async (classId) => {
+    await saveMemo(user.id, classId, editMemo);
+    await loadData();
+    alert("メモを保存しました");
+  };
+
+  const handleAddTask = async (e) => {
+    e.preventDefault();
+    if (!newTaskTitle || !newTaskDueDate) return;
+    await saveTask(user.id, {
+      title: newTaskTitle,
+      subject: selectedClass.subject,
+      dueDate: newTaskDueDate,
+      completed: false
+    });
+    setNewTaskTitle('');
+    setNewTaskDueDate('');
+    await loadData();
+    alert("課題を追加しました");
+  };
 
   return (
-    <div className="animate-fade-in">
+    <>
+      <div className="animate-fade-in" style={{ position: 'relative' }}>
       <header className="page-header">
         <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">{todayStr} ({dayOfWeek}) の予定とタスク</p>
+        <p className="page-subtitle" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {todayStr} ({dayOfWeek}) の予定とタスク
+          {iterationInfo && (
+            <span style={{
+              fontSize: '14px',
+              padding: '4px 10px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              fontWeight: 'bold',
+              color: 'var(--accent-secondary)'
+            }}>
+              {iterationInfo.info 
+                ? `${iterationInfo.semester} - ${iterationInfo.info}` 
+                : `${iterationInfo.semester} 第${iterationInfo.iteration}回`}
+            </span>
+          )}
+        </p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
         
         {/* Today's Classes */}
         <section className="glass-card">
           <h2 style={{ fontSize: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Clock size={20} color="var(--accent-primary)" />
-            今日の時間割
+            今日の時間割 (クリックで出欠・メモ操作)
           </h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {todayClasses.length > 0 ? todayClasses.map(cls => (
-              <div key={cls.id} style={{ 
-                padding: '16px', 
-                borderRadius: '12px', 
-                background: 'rgba(255,255,255,0.03)',
-                borderLeft: '4px solid var(--accent-primary)'
-              }}>
+              <div 
+                key={cls.id} 
+                onClick={() => openClassModal(cls)}
+                style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  background: 'rgba(255,255,255,0.03)',
+                  borderLeft: '4px solid var(--accent-primary)',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <span style={{ fontWeight: 'bold', color: 'var(--accent-secondary)'}}>{periodTimes[cls.period]?.label}</span>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)'}}>{periodTimes[cls.period]?.time}</span>
@@ -82,6 +166,11 @@ const Dashboard = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <BookOpen size={14} /> {cls.credits}単位
                   </div>
+                  {(attendanceData[cls.id] && attendanceData[cls.id].attended > 0) && (
+                     <div style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                       出席×{attendanceData[cls.id].attended}
+                     </div>
+                  )}
                 </div>
               </div>
             )) : (
@@ -130,7 +219,122 @@ const Dashboard = () => {
           </div>
         </section>
       </div>
-    </div>
+      </div>
+
+      {modalOpen && selectedClass && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '40px 16px', overflowY: 'auto', zIndex: 100, backdropFilter: 'blur(4px)' }}
+             onClick={() => setModalOpen(false)}>
+          <div style={{ width: '100%', maxWidth: '500px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '24px', flexShrink: 0 }}
+               onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px' }}>
+                {selectedClass.subject}
+              </h2>
+              <button onClick={() => setModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}><X size={24} /></button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={16} /> {selectedClass.room}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><User size={16} /> {selectedClass.teacher}</div>
+            </div>
+
+            {/* 出欠管理 */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                出欠管理
+              </h3>
+              <div className="modal-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                
+                {/* 出席 */}
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', color: '#10b981', marginBottom: '8px' }}>出席</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button onClick={() => handleAttendance(selectedClass.id, 'attended', -1)} style={{ background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', cursor: 'pointer' }}><Minus size={16}/></button>
+                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>{(attendanceData[selectedClass.id] || {}).attended || 0}</span>
+                    <button onClick={() => handleAttendance(selectedClass.id, 'attended', 1)} style={{ background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', cursor: 'pointer' }}><Plus size={16}/></button>
+                  </div>
+                </div>
+
+                {/* 遅刻 */}
+                <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', color: '#f59e0b', marginBottom: '8px' }}>遅刻</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button onClick={() => handleAttendance(selectedClass.id, 'late', -1)} style={{ background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b', cursor: 'pointer' }}><Minus size={16}/></button>
+                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b' }}>{(attendanceData[selectedClass.id] || {}).late || 0}</span>
+                    <button onClick={() => handleAttendance(selectedClass.id, 'late', 1)} style={{ background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b', cursor: 'pointer' }}><Plus size={16}/></button>
+                  </div>
+                </div>
+
+                {/* 欠席 */}
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '12px', color: '#ef4444', marginBottom: '8px' }}>欠席</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button onClick={() => handleAttendance(selectedClass.id, 'absent', -1)} style={{ background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', cursor: 'pointer' }}><Minus size={16}/></button>
+                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#ef4444' }}>{(attendanceData[selectedClass.id] || {}).absent || 0}</span>
+                    <button onClick={() => handleAttendance(selectedClass.id, 'absent', 1)} style={{ background: 'rgba(0,0,0,0.2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', cursor: 'pointer' }}><Plus size={16}/></button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '24px 0' }}/>
+            
+            {/* メモ */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileText size={18} /> メモ・備考
+              </h3>
+              <textarea 
+                value={editMemo} 
+                onChange={e => setEditMemo(e.target.value)} 
+                placeholder="授業のメモや持ち物、テスト範囲などを記入できます"
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)', minHeight: '80px', resize: 'vertical', marginBottom: '12px' }}
+              />
+              <button onClick={() => handleSaveMemo(selectedClass.id)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--accent-secondary)', background: 'rgba(255,255,255,0.05)', color: 'var(--accent-secondary)', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}>
+                メモを保存する
+              </button>
+            </div>
+
+            <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '24px 0' }}/>
+
+            {/* 課題追加 */}
+            <div style={{ marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CalendarIcon size={18} /> 新規課題の登録
+              </h3>
+              <form onSubmit={handleAddTask} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>課題名</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newTaskTitle}
+                    onChange={e => setNewTaskTitle(e.target.value)}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none' }} 
+                    placeholder="例: 第3回 課題レポート"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>提出期限</label>
+                  <input 
+                    type="datetime-local" 
+                    required
+                    value={newTaskDueDate}
+                    onChange={e => setNewTaskDueDate(e.target.value)}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none', colorScheme: 'dark' }} 
+                  />
+                </div>
+                <button type="submit" style={{ marginTop: '8px', padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--accent-primary)', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}>
+                  課題を追加
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
