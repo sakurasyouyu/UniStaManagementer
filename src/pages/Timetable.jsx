@@ -67,22 +67,30 @@ const Timetable = () => {
   };
 
   const handleSaveClass = async () => {
-    if (!editSubject.trim()) return;
-    const newClass = {
-      id: selectedSlot.classData ? selectedSlot.classData.id : undefined,
-      year: selectedYear,
-      semester: selectedSemester,
-      day: selectedSlot.day,
-      period: selectedSlot.period,
-      subject: editSubject,
-      teacher: editTeacher,
-      room: editRoom,
-      syllabusUrl: editSyllabusUrl,
-      credits: selectedSlot.classData ? selectedSlot.classData.credits : 2.0
-    };
-    await saveClass(user.id, newClass);
-    await loadData();
-    setModalOpen(false);
+    if (!editSubject.trim()) {
+      alert('科目名を入力してください');
+      return;
+    }
+    try {
+      const newClass = {
+        id: selectedSlot.classData ? selectedSlot.classData.id : undefined,
+        year: selectedYear,
+        semester: selectedSemester,
+        day: selectedSlot.day,
+        period: selectedSlot.period,
+        subject: editSubject,
+        teacher: editTeacher,
+        room: editRoom,
+        syllabusUrl: editSyllabusUrl,
+        credits: selectedSlot.classData ? selectedSlot.classData.credits : 2.0
+      };
+      await saveClass(user.id, newClass);
+      await loadData();
+      setModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      alert(`保存に失敗しました。\n${e?.message || e}`);
+    }
   };
 
   const handleDeleteClass = async () => {
