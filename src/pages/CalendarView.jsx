@@ -79,6 +79,7 @@ const CalendarView = () => {
             const dailyEvents = events.filter(e => e.date === dateStr);
             const effectiveDayIdx = getEffectiveDayIndex(day);
             const iterationInfo = getClassIteration(day);
+            const labelDayIdx = (effectiveDayIdx !== null) ? effectiveDayIdx : (iterationInfo?.dayIndex ?? null);
             const dailyClasses = effectiveDayIdx !== null
               ? timetable.filter(c => c.day === effectiveDayIdx).sort((a, b) => a.period - b.period)
               : [];
@@ -93,7 +94,7 @@ const CalendarView = () => {
                   <span style={{ fontSize: '14px', color: 'var(--text-secondary)', minWidth: '36px' }}>
                     {format(day, 'd')}日 <span style={{ fontSize: '12px' }}>({dayNames[dayOfWeek]})</span>
                   </span>
-                  {iterationInfo?.iteration && effectiveDayIdx !== null && (
+                  {iterationInfo?.iteration && labelDayIdx !== null && (
                     <span style={{ fontSize: '11px', color: 'var(--text-secondary)', opacity: 0.7 }}>第{iterationInfo.iteration}回</span>
                   )}
                 </div>
@@ -121,9 +122,9 @@ const CalendarView = () => {
                     {dayFullNames[dayOfWeek]}
                   </span>
                   <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {iterationInfo?.iteration && effectiveDayIdx !== null && (
+                    {iterationInfo?.iteration && labelDayIdx !== null && (
                       <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#a78bfa', background: 'rgba(167,139,250,0.1)', padding: '2px 8px', borderRadius: '10px', border: '1px solid rgba(167,139,250,0.3)', letterSpacing: '0.05em' }}>
-                        {['月','火','水','木','金'][effectiveDayIdx]}{iterationInfo.iteration}
+                        {['月','火','水','木','金'][labelDayIdx]}{iterationInfo.iteration}
                       </span>
                     )}
                     {isTodayDate && (
@@ -194,6 +195,7 @@ const CalendarView = () => {
               ? timetable.filter(c => c.day === effectiveDayIdx).sort((a, b) => a.period - b.period) 
               : [];
             const iterationInfo = getClassIteration(day);
+            const labelDayIdx = (effectiveDayIdx !== null) ? effectiveDayIdx : (iterationInfo?.dayIndex ?? null);
             const hasClasses = dailyClasses.length > 0;
 
             return (
@@ -218,7 +220,7 @@ const CalendarView = () => {
                   }}>
                     {format(day, 'd')}
                   </span>
-                  {iterationInfo && iterationInfo.iteration && effectiveDayIdx !== null && (
+                  {iterationInfo && iterationInfo.iteration && labelDayIdx !== null && (
                     <span style={{
                       fontSize: '11px', fontWeight: 'bold',
                       color: '#a78bfa',
@@ -227,7 +229,7 @@ const CalendarView = () => {
                       border: '1px solid rgba(167,139,250,0.3)',
                       letterSpacing: '0.05em'
                     }}>
-                      {['月','火','水','木','金'][effectiveDayIdx]}{iterationInfo.iteration}
+                      {['月','火','水','木','金'][labelDayIdx]}{iterationInfo.iteration}
                     </span>
                   )}
                 </div>

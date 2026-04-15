@@ -1,14 +1,12 @@
 import { format } from 'date-fns';
 
 // ============================================================
-// 国民の祝日・大学独自の休業日（全曜日対象）
+// 授業が無い日
 // ============================================================
-// 【注意】以下の日付は通常の祝日と異なる扱い:
-//  - 1/4(月), 1/5(火) → 冬季休業明け授業日 → リストに含めない
-//  - 10/30(金), 11/6(金), 1/15(金) → 金曜授業のみ休講
-//    （その日は金曜日なので「全授業休講」と同義）
+// - noCountHolidays: 授業回数に「数えない」（祝日・長期休暇など）
+// - countButNoClass: 授業は無いが、学年暦の「第N回」に相当する日（休講等）
 // ============================================================
-const holidays = [
+const noCountHolidays = [
   // 前期（4月〜9月）
   '2026-04-29', // 昭和の日【水】
   '2026-05-04', // みどりの日【月】
@@ -23,21 +21,31 @@ const holidays = [
   '2026-10-12', // スポーツの日【月】
   '2026-10-30', // 大学祭（静岡）のため金曜休講【金】
   '2026-11-03', // 文化の日【火】
-  '2026-11-06', // テクノフェスタ・大学祭（浜松）のため金曜休講【金】
   '2026-11-23', // 勤労感謝の日【月】
   // 冬季休業（12/28〜1/1）
+  // ※表に基づき、12/22〜12/24 は授業なし（冬季休業扱い）
+  '2026-12-22', // 火
+  '2026-12-23', // 水
+  '2026-12-24', // 木
   '2026-12-28', // 月
   '2026-12-29', // 火
   '2026-12-30', // 水
   '2026-12-31', // 木
   '2027-01-01', // 元日【金】
   // ※1/4(月), 1/5(火) は授業実施のためリストに含めない
+  '2027-01-07', // 木（表に基づき授業なし）
   '2027-01-11', // 成人の日【月】
-  '2027-01-15', // 大学入学共通テスト設営のため金曜休講【金】
+  '2027-01-21', // 木（表に基づき授業なし）
   '2027-02-11', // 建国記念の日【木】
   '2027-02-23', // 天皇誕生日
   '2027-03-20', // 春分の日
   '2027-03-22', // 振替休日
+];
+
+const countButNoClass = [
+  // 後期：休講等（授業は無いが、回数は該当回として扱う）
+  '2026-11-06', // 金：テクノフェスタ・大学祭（浜松）準備等のため金曜授業なし
+  '2027-01-15', // 金：大学入学共通テスト設営のため休講（情報学部は一部開講あり）
 ];
 
 // ============================================================
@@ -48,6 +56,7 @@ const holidays = [
 const specialClasses = {
   '2026-05-07': 3, // 木曜日に水曜授業を実施（4/29・5/6の水曜休講補填）
   '2026-07-17': 1, // 金曜日に月曜授業を実施（月14）
+  '2026-11-25': 1, // 水曜日に月曜授業を実施（月7）
   '2026-12-25': 3, // 金曜日に水曜授業を実施（水曜12回→13回補填）
 };
 
@@ -74,7 +83,8 @@ const noClassPeriods = [
     type: 'break',
   },
   {
-    start: '2027-02-13',
+    // ※後期の授業/試験期間は 2/4（木）まで（表に基づく）
+    start: '2027-02-05',
     end: '2027-03-31',
     label: '後期試験・春季休暇',
     type: 'break',
@@ -114,18 +124,19 @@ export const annualEvents = [
   { date: '2026-10-05', title: '後期授業開始（月1）', type: 'academic' },
   { date: '2026-10-06', title: '後期授業開始（火1）', type: 'academic' },
   { date: '2026-10-07', title: '後期授業開始（水1）', type: 'academic' },
+  { date: '2026-11-06', title: '金曜授業なし（テクノフェスタ・大学祭 準備等）', type: 'holiday' },
+  { date: '2026-11-25', title: '月曜授業を実施（※水曜日に月曜授業）', type: 'other' },
   { date: '2026-10-30', title: '大学祭（静岡）→金曜休講', type: 'holiday' },
-  { date: '2026-11-06', title: 'テクノフェスタ・大学祭（浜松）→金曜休講', type: 'holiday' },
   { date: '2026-11-07', title: 'テクノフェスタ・大学祭（浜松）', type: 'event' },
   { date: '2026-12-25', title: '金曜日に水曜授業を実施（水13）', type: 'other' },
   { date: '2026-12-28', title: '冬季休業（〜1/1）', type: 'holiday' },
   { date: '2027-01-04', title: '後期授業再開（月11）', type: 'academic' },
   { date: '2027-01-14', title: '木曜授業 第15回（後期最終）', type: 'academic' },
-  { date: '2027-01-15', title: '共通テスト設営→金曜休講', type: 'holiday' },
+  { date: '2027-01-15', title: '共通テスト設営→休講（※一部開講あり）', type: 'holiday' },
   { date: '2027-01-31', title: '後期期末試験開始', type: 'exam' },
   { date: '2027-02-08', title: '月曜授業 第15回（後期最終）', type: 'academic' },
   { date: '2027-02-12', title: '金曜授業 第15回（後期最終・試験）', type: 'exam' },
-  { date: '2027-02-13', title: '後期試験・春季休暇', type: 'holiday' },
+  { date: '2027-02-05', title: '後期試験・春季休暇', type: 'holiday' },
 ];
 
 export const getAnnualEvents = () => annualEvents;
@@ -149,7 +160,8 @@ export const getEffectiveDayIndex = (targetDate) => {
   const tStr = format(d, 'yyyy-MM-dd');
 
   if (getNoClassPeriod(tStr)) return null;
-  if (holidays.includes(tStr)) return null;
+  if (noCountHolidays.includes(tStr)) return null;
+  if (countButNoClass.includes(tStr)) return null;
 
   // specialClasses がある場合はその曜日で上書き
   const dow = specialClasses[tStr] !== undefined ? specialClasses[tStr] : d.getDay();
@@ -192,14 +204,15 @@ export const getClassIteration = (targetDate) => {
     return { semester: semesterName, info: noClass.label, isExamPeriod: true };
   }
 
-  // 休日・休講日
-  if (holidays.includes(tStr)) {
-    return { semester: semesterName, info: '休講（祝祭日等）' };
-  }
-
   // 対象曜日（特別日程は上書き）
   const targetDow = specialClasses[tStr] !== undefined ? specialClasses[tStr] : d.getDay();
   if (targetDow === 0 || targetDow === 6) return null;
+  const targetDayIndex = targetDow - 1;
+
+  // 祝日等（授業回数に数えない）
+  if (noCountHolidays.includes(tStr)) {
+    return { semester: semesterName, info: '休講（祝祭日等）' };
+  }
 
   // 学期開始〜対象日まで同じ曜日をカウント
   // （授業なし期間・祝日・土日・specialClass上書き 考慮）
@@ -210,9 +223,11 @@ export const getClassIteration = (targetDate) => {
   while (format(cur, 'yyyy-MM-dd') <= tStr) {
     const curStr = format(cur, 'yyyy-MM-dd');
 
-    if (!getNoClassPeriod(curStr) && !holidays.includes(curStr)) {
+    if (!getNoClassPeriod(curStr) && !noCountHolidays.includes(curStr)) {
       const curDow = specialClasses[curStr] !== undefined ? specialClasses[curStr] : cur.getDay();
-      if (curDow >= 1 && curDow <= 5 && curDow === targetDow) {
+      const isWeekday = curDow >= 1 && curDow <= 5;
+      if (isWeekday && curDow === targetDow) {
+        // countButNoClass は「授業は無い」が回数には該当するためカウントする
         count++;
       }
     }
@@ -225,5 +240,9 @@ export const getClassIteration = (targetDate) => {
     return { semester: semesterName, info: '授業終了（試験期間）', isExamPeriod: true };
   }
 
-  return { semester: semesterName, iteration: count };
+  if (countButNoClass.includes(tStr)) {
+    return { semester: semesterName, iteration: count, dayIndex: targetDayIndex, info: '休講' };
+  }
+
+  return { semester: semesterName, iteration: count, dayIndex: targetDayIndex };
 };
