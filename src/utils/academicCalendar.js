@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 // ============================================================
 const holidays = [
   // 前期（4月〜9月）
-  '2026-04-10', // 授業回数に数えない日（表では金1が4/17）
+  '2026-04-10', // 授業回数に数えない日
   '2026-04-29', // 昭和の日【水】
   '2026-05-04', // みどりの日【月】
   '2026-05-05', // こどもの日【火】
@@ -96,7 +96,7 @@ const semesters = {
 export const annualEvents = [
   { date: '2026-04-04', title: '入学式 静岡・浜松', type: 'ceremony' },
   { date: '2026-04-06', title: '健康診断', type: 'other' },
-  { date: '2026-04-10', title: '授業回数に数えない日（表では金1が4/17）', type: 'other' },
+  { date: '2026-04-10', title: '前期授業開始（金）', type: 'academic' },
   { date: '2026-04-13', title: '前期授業開始（月1）', type: 'academic' },
   { date: '2026-04-14', title: '前期授業開始（火1）', type: 'academic' },
   { date: '2026-04-15', title: '前期授業開始（水1）', type: 'academic' },
