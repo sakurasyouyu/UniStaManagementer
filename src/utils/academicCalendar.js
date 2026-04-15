@@ -117,7 +117,7 @@ export const annualEvents = [
   { date: '2026-07-28', title: '火曜授業 第15回（前期最終）', type: 'academic' },
   { date: '2026-07-29', title: '水曜授業 第15回（前期最終）', type: 'academic' },
   { date: '2026-07-30', title: '木曜授業 第15回（前期最終）', type: 'academic' },
-  { date: '2026-07-31', title: '金曜授業 第15回（授業/試験期間）', type: 'academic' },
+  { date: '2026-07-31', title: '金曜授業 第15回（前期最終）', type: 'academic' },
   { date: '2026-08-01', title: '前期試験・夏季休業開始', type: 'holiday' },
   { date: '2026-10-01', title: '後期授業開始（木1）', type: 'academic' },
   { date: '2026-10-02', title: '後期授業開始（金1）', type: 'academic' },
