@@ -10,7 +10,6 @@ import { format } from 'date-fns';
 // ============================================================
 const holidays = [
   // 前期（4月〜9月）
-  '2026-04-10', // 授業回数に数えない日
   '2026-04-29', // 昭和の日【水】
   '2026-05-04', // みどりの日【月】
   '2026-05-05', // こどもの日【火】
@@ -83,10 +82,9 @@ const noClassPeriods = [
 ];
 
 // 学期定義
-// 金曜のみ 4/10（金）から授業開始、他は 4/13（月）週から
-// 金1:4/10, 月1:4/13, 火1:4/14, 水1:4/15, 木1:4/16, 金2:4/17
+// 前期は 4/13（月）週から開始（※金曜の第1回は 4/17）
 const semesters = {
-  first:  { name: '前期', start: '2026-04-10', end: '2026-09-30' },
+  first:  { name: '前期', start: '2026-04-13', end: '2026-09-30' },
   second: { name: '後期', start: '2026-10-01', end: '2027-03-31' },
 };
 
@@ -96,11 +94,11 @@ const semesters = {
 export const annualEvents = [
   { date: '2026-04-04', title: '入学式 静岡・浜松', type: 'ceremony' },
   { date: '2026-04-06', title: '健康診断', type: 'other' },
-  { date: '2026-04-10', title: '前期授業開始（金）', type: 'academic' },
   { date: '2026-04-13', title: '前期授業開始（月1）', type: 'academic' },
   { date: '2026-04-14', title: '前期授業開始（火1）', type: 'academic' },
   { date: '2026-04-15', title: '前期授業開始（水1）', type: 'academic' },
   { date: '2026-04-16', title: '前期授業開始（木1）', type: 'academic' },
+  { date: '2026-04-17', title: '前期授業開始（金1）', type: 'academic' },
   { date: '2026-05-07', title: '水曜授業を実施（木曜日・水3）', type: 'other' },
   { date: '2026-05-26', title: '全学一斉地震防災訓練', type: 'other' },
   { date: '2026-07-17', title: '月曜授業 第14回（※金曜日に月曜授業を実施）', type: 'academic' },
