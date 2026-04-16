@@ -42,6 +42,48 @@ const LineLink = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  const tryResumeConnect = async () => {
+    if (!user) return;
+    if (!liffId) return;
+    const pending = sessionStorage.getItem('lineConnectPending') === '1';
+    if (!pending) return;
+
+    setError('');
+    setSaving(true);
+    try {
+      await liff.init({ liffId });
+      if (!liff.isLoggedIn()) return;
+
+      const p = await liff.getProfile();
+      const lineUserId = p?.userId;
+      if (!lineUserId) throw new Error('LINE userId の取得に失敗しました');
+
+      const next = {
+        user_id: user.id,
+        line_user_id: lineUserId,
+        line_reminders_enabled: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: upsertError } = await supabase.from('profiles').upsert(next);
+      if (upsertError) throw upsertError;
+
+      setProfileRow((prev) => ({ ...(prev || {}), ...next }));
+      sessionStorage.removeItem('lineConnectPending');
+    } catch (e) {
+      setError(e?.message || String(e));
+      sessionStorage.removeItem('lineConnectPending');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    // ログイン後の戻りで、未完了フローを自動再開
+    tryResumeConnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, liffId]);
+
   const ensureLiffReady = async () => {
     if (!liffId) throw new Error('VITE_LIFF_ID が未設定です（VercelのProduction 環境変数を確認してください）');
     await liff.init({ liffId });
@@ -57,8 +99,12 @@ const LineLink = () => {
     setError('');
     setSaving(true);
     try {
+      // ログイン遷移が発生した場合に、戻ってきた後の再開用
+      sessionStorage.setItem('lineConnectPending', '1');
+
       const ready = await ensureLiffReady();
       if (!ready) return;
+
       const p = await liff.getProfile();
       const lineUserId = p?.userId;
       if (!lineUserId) throw new Error('LINE userId の取得に失敗しました');
@@ -73,8 +119,10 @@ const LineLink = () => {
       if (upsertError) throw upsertError;
 
       setProfileRow((prev) => ({ ...(prev || {}), ...next }));
+      sessionStorage.removeItem('lineConnectPending');
     } catch (e) {
       setError(e?.message || String(e));
+      sessionStorage.removeItem('lineConnectPending');
     } finally {
       setSaving(false);
     }
