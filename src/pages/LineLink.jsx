@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import liff from '@line/liff';
 import { supabase } from '../utils/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -10,7 +10,7 @@ const LineLink = () => {
   const [profileRow, setProfileRow] = useState(null);
   const [error, setError] = useState('');
 
-  const liffId = useMemo(() => import.meta.env.VITE_LIFF_ID, []);
+  const liffId = import.meta.env.VITE_LIFF_ID;
 
   const loadProfile = async () => {
     if (!user) return;
@@ -43,7 +43,7 @@ const LineLink = () => {
   }, [user?.id]);
 
   const ensureLiffReady = async () => {
-    if (!liffId) throw new Error('VITE_LIFF_ID が未設定です');
+    if (!liffId) throw new Error('VITE_LIFF_ID が未設定です（VercelのProduction 環境変数を確認してください）');
     await liff.init({ liffId });
     if (!liff.isLoggedIn()) {
       // LINEアプリ内/外に関係なくログインを促す
@@ -143,6 +143,9 @@ const LineLink = () => {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                LIFF ID設定: {liffId ? 'あり' : 'なし'}
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontWeight: 700, marginBottom: '4px' }}>連携状態</div>
