@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, CheckSquare, Calendar as CalendarIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, CheckSquare, Calendar as CalendarIcon, LogOut, MessageCircle } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { signOut } from './utils/storage';
 import Dashboard from './pages/Dashboard';
@@ -8,6 +8,7 @@ import Timetable from './pages/Timetable';
 import Tasks from './pages/Tasks';
 import CalendarView from './pages/CalendarView';
 import Login from './pages/Login';
+import LineLink from './pages/LineLink';
 
 const Sidebar = () => {
   const { user } = useAuth();
@@ -39,6 +40,10 @@ const Sidebar = () => {
         <NavLink to="/calendar" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <CalendarIcon size={20} />
           Yearly Schedule
+        </NavLink>
+        <NavLink to="/line" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <MessageCircle size={20} />
+          LINE連携
         </NavLink>
       </nav>
 
@@ -91,6 +96,7 @@ const AppShell = () => {
           <Route path="/timetable" element={<Timetable />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/calendar" element={<CalendarView />} />
+          <Route path="/line" element={<LineLink />} />
         </Routes>
       </main>
     </div>
