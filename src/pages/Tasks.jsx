@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { getTasks, saveTask, deleteTask, getTimetable } from '../utils/storage';
 import { Plus, Trash2, Calendar as CalendarIcon, CheckCircle, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -95,7 +96,7 @@ const Tasks = () => {
         )}
       </div>
 
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -107,7 +108,7 @@ const Tasks = () => {
             justifyContent: 'center',
             padding: '24px 16px',
             overflowY: 'auto',
-            zIndex: 100,
+            zIndex: 10000,
           }}
         >
           <div
@@ -171,7 +172,8 @@ const Tasks = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
