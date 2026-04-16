@@ -96,8 +96,30 @@ const Tasks = () => {
       </div>
 
       {isModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', background: 'var(--bg-secondary)' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            padding: '24px 16px',
+            overflowY: 'auto',
+            zIndex: 100,
+          }}
+        >
+          <div
+            className="glass-card"
+            style={{
+              width: '100%',
+              maxWidth: '500px',
+              background: 'var(--bg-secondary)',
+              maxHeight: 'calc(100vh - 48px)',
+              overflowY: 'auto',
+            }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '20px' }}>新規課題の追加</h2>
               <button className="btn-icon" onClick={() => setIsModalOpen(false)}>
