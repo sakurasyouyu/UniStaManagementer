@@ -236,7 +236,7 @@ const LineLink = () => {
 
               {connected && (
                 <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  LINE userId: <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace' }}>{profileRow.line_user_id}</span>
+                  LINE userId: <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{profileRow.line_user_id}</span>
                 </div>
               )}
 

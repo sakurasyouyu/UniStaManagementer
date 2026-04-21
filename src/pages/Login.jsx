@@ -11,7 +11,7 @@ const Login = () => {
       setLoading(true);
       setError(null);
       await signInWithGoogle();
-    } catch (e) {
+    } catch {
       setError('ログインに失敗しました。もう一度お試しください。');
       setLoading(false);
     }

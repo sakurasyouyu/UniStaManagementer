@@ -196,7 +196,6 @@ const CalendarView = () => {
               : [];
             const iterationInfo = getClassIteration(day);
             const labelDayIdx = (effectiveDayIdx !== null) ? effectiveDayIdx : (iterationInfo?.dayIndex ?? null);
-            const hasClasses = dailyClasses.length > 0;
 
             return (
               <div key={idx} style={{

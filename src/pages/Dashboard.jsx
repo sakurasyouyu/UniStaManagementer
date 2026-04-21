@@ -57,6 +57,7 @@ const Dashboard = () => {
       await loadData();
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const todayDate = new Date();
@@ -190,6 +191,7 @@ const Dashboard = () => {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {upcomingTasks.length > 0 ? upcomingTasks.map(task => {
+               
               const isUrgent = new Date(task.dueDate) < new Date(Date.now() + 86400000 * 2); // Less than 2 days
               return (
                 <div key={task.id} style={{ 

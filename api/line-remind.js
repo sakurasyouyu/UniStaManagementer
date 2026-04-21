@@ -1,3 +1,4 @@
+/* global process */
 import { createClient } from '@supabase/supabase-js';
 
 const DAYS_BEFORE_LIST = [7, 3, 1];

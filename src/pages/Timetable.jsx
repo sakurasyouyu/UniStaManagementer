@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getTimetable, updateAttendance, getAttendance, getMemos, saveMemo, saveClass, deleteClass } from '../utils/storage';
 import { MapPin, User, FileText, X, Trash2, Plus, Minus, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -52,7 +52,9 @@ const Timetable = () => {
   };
 
   useEffect(() => {
+     
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedSemester, user]);
 
   const handleAttendance = async (classId, type, amount) => {
